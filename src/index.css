@@ -80,16 +80,23 @@
     @apply border-border;
   }
 
-  body {
+  body,
+  html {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    height: 100%;
+    height: -webkit-fill-available;
     height: 100dvh;
     overflow: hidden;
     overscroll-behavior: none;
+    position: fixed;
+    width: 100%;
   }
 
   #root {
     height: 100%;
+    width: 100%;
+    overflow: hidden;
   }
 
   /* Desktop Blocker Overlay */
