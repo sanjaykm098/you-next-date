@@ -22,6 +22,7 @@ export interface Persona {
   photos: string[];
   vibes: string[];
   location: string;
+  gender: string;
 }
 
 export interface Chat {

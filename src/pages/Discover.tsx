@@ -55,12 +55,12 @@ function SwipeCard({
       {/* Card */}
       <div className="relative w-full h-full rounded-2xl overflow-hidden bg-card shadow-2xl">
         {/* Photo */}
-        <img
-          src={persona.photos[0]}
-          alt={persona.name}
-          className="absolute inset-0 w-full h-full object-cover"
-          draggable={false}
-        />
+        {/* Avatar Emoji (No Photos) */}
+        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
+          <span className="text-[150px]" role="img" aria-label="avatar">
+            {persona.photos?.[0] || (persona.gender === 'Male' ? '👱‍♂️' : '👩‍🦰')}
+          </span>
+        </div>
 
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -125,12 +125,10 @@ function MatchModal({ persona, onClose, onChat }: { persona: Persona; onClose: (
           You and {persona.name} liked each other
         </p>
 
-        <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-8 ring-4 ring-primary shadow-[0_0_30px_rgba(233,64,87,0.5)]">
-          <img
-            src={persona.photos[0]}
-            alt={persona.name}
-            className="w-full h-full object-cover"
-          />
+        <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-8 ring-4 ring-primary shadow-[0_0_30px_rgba(233,64,87,0.5)] bg-card flex items-center justify-center">
+          <span className="text-6xl" role="img" aria-label="avatar">
+            {persona.photos?.[0] || (persona.gender === 'Male' ? '👱‍♂️' : '👩‍🦰')}
+          </span>
         </div>
 
         <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
@@ -161,9 +159,21 @@ export default function Discover() {
 
   useEffect(() => {
     const fetchPersonas = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('gender')
+        .eq('id', user.id)
+        .single();
+
+      const targetGender = userProfile?.gender === 'Male' ? 'Female' : 'Male'; // Simple toggle for MVP
+
       const { data, error } = await supabase
         .from('personas')
-        .select('*');
+        .select('*')
+        .eq('gender', targetGender);
 
       if (data) setPersonas(data);
       setLoading(false);
