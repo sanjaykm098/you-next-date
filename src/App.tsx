@@ -24,10 +24,10 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="*" element={
             <MobileOnly>
               <Routes>
-                <Route path="/auth" element={<Auth />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/discover" element={<Discover />} />
                 <Route path="/chat" element={<ChatPage />} />

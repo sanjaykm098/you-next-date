@@ -9,8 +9,8 @@ export default function Landing() {
   const features = [
     {
       icon: <MessageCircle className="w-6 h-6 text-pink-500" />,
-      title: "Hinglish AI Chats",
-      description: "Talk to real-feeling personas in your own language. No boring bots here."
+      title: "Hinglish Conversations",
+      description: "Talk to real-feeling personas in your own language. Effortless and natural."
     },
     {
       icon: <Users className="w-6 h-6 text-purple-500" />,
@@ -164,7 +164,7 @@ export default function Landing() {
           <div className="flex flex-wrap justify-center gap-12 md:gap-24 grayscale opacity-40">
             <div className="flex items-center gap-2 text-3xl font-black">EMOJI MATCH</div>
             <div className="flex items-center gap-2 text-3xl font-black italic">VIBE CHECK</div>
-            <div className="flex items-center gap-2 text-3xl font-black">HINGLISH.AI</div>
+            <div className="flex items-center gap-2 text-3xl font-black uppercase">HINGLISH</div>
             <div className="flex items-center gap-2 text-3xl font-black tracking-tighter">DATE4U</div>
           </div>
         </div>

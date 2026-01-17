@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
     }
 
     let isMatch = false
+    let chatId = null
     if (direction === 'right') {
       // Simulate match logic (can be more complex later)
       isMatch = Math.random() > 0.4
@@ -62,10 +63,11 @@ Deno.serve(async (req) => {
         const { data: chat, error: chatError } = await supabaseClient
           .from('chats')
           .upsert({ user_id: user.id, persona_id: personaId }, { onConflict: 'user_id,persona_id' })
-          .select()
+          .select('id')
           .single()
 
         if (chatError) throw chatError
+        chatId = chat.id
       }
 
       // Update limits
@@ -73,7 +75,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ isMatch }),
+      JSON.stringify({ isMatch, chatId }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

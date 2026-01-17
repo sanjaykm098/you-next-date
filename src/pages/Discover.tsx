@@ -156,6 +156,7 @@ export default function Discover() {
   const [loading, setLoading] = useState(true);
   const [isSwiping, setIsSwiping] = useState(false);
   const [matchedPersona, setMatchedPersona] = useState<Persona | null>(null);
+  const [lastMatchChatId, setLastMatchChatId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPersonas = async () => {
@@ -195,6 +196,7 @@ export default function Discover() {
 
       if (data?.isMatch) {
         setMatchedPersona(currentPersona);
+        setLastMatchChatId(data.chatId);
       }
     } catch (err: any) {
       console.error('Swipe error:', err);
@@ -279,8 +281,17 @@ export default function Discover() {
         {matchedPersona && (
           <MatchModal
             persona={matchedPersona}
-            onClose={() => setMatchedPersona(null)}
-            onChat={() => navigate('/chat')}
+            onClose={() => {
+              setMatchedPersona(null);
+              setLastMatchChatId(null);
+            }}
+            onChat={() => {
+              if (lastMatchChatId) {
+                navigate(`/chat/${lastMatchChatId}`);
+              } else {
+                navigate('/chat');
+              }
+            }}
           />
         )}
       </AnimatePresence>

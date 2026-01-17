@@ -84,24 +84,24 @@
   html {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-    height: 100%;
-    height: -webkit-fill-available;
+    min-height: 100%;
+    width: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fixed Viewport for App Feel */
+  .fixed-viewport {
+    height: 100vh;
     height: 100dvh;
     overflow: hidden;
     overscroll-behavior: none;
     position: fixed;
-    width: 100%;
-    /* Native App Feel */
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    user-select: none;
     touch-action: none;
   }
 
   #root {
-    height: 100%;
+    min-height: 100%;
     width: 100%;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
   }
