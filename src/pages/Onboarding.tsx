@@ -20,7 +20,20 @@ export default function Onboarding() {
     useEffect(() => {
         const checkUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) navigate('/');
+            if (!user) {
+                navigate('/');
+                return;
+            }
+
+            const { data: profile } = await supabase
+                .from('users')
+                .select('onboarding_completed')
+                .eq('id', user.id)
+                .single();
+
+            if (profile?.onboarding_completed) {
+                navigate('/discover');
+            }
         };
         checkUser();
     }, [navigate]);
@@ -134,8 +147,8 @@ export default function Onboarding() {
                                         key={vibe}
                                         onClick={() => toggleVibe(vibe)}
                                         className={`px-4 py-2 rounded-full border transition-all ${formData.preferences.includes(vibe)
-                                                ? 'bg-primary border-primary text-white'
-                                                : 'border-border text-muted-foreground hover:border-muted'
+                                            ? 'bg-primary border-primary text-white'
+                                            : 'border-border text-muted-foreground hover:border-muted'
                                             }`}
                                     >
                                         {vibe}

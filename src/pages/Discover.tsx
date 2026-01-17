@@ -10,11 +10,13 @@ import { supabase } from '@/lib/supabase';
 function SwipeCard({
   persona,
   onSwipe,
-  isTop
+  isTop,
+  isSwiping
 }: {
   persona: Persona;
   onSwipe: (direction: 'left' | 'right') => void;
   isTop: boolean;
+  isSwiping: boolean;
 }) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
@@ -38,7 +40,7 @@ function SwipeCard({
         isTop ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
       )}
       style={{ x, rotate, opacity }}
-      drag={isTop ? 'x' : false}
+      drag={isTop && !isSwiping ? 'x' : false}
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.7}
       onDragEnd={handleDragEnd}
@@ -154,6 +156,7 @@ export default function Discover() {
   const navigate = useNavigate();
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSwiping, setIsSwiping] = useState(false);
   const [matchedPersona, setMatchedPersona] = useState<Persona | null>(null);
 
   useEffect(() => {
@@ -169,8 +172,11 @@ export default function Discover() {
   }, []);
 
   const handleSwipe = useCallback(async (direction: 'left' | 'right') => {
+    if (isSwiping) return;
     const currentPersona = personas[0];
     if (!currentPersona) return;
+
+    setIsSwiping(true);
 
     try {
       const { data, error } = await supabase.functions.invoke('check-swipe', {
@@ -187,10 +193,11 @@ export default function Discover() {
         supabase.auth.signOut();
         navigate('/');
       }
+    } finally {
+      setIsSwiping(false);
+      setPersonas((prev) => prev.slice(1));
     }
-
-    setPersonas((prev) => prev.slice(1));
-  }, [personas]);
+  }, [personas, isSwiping, navigate]);
 
   if (loading) {
     return (
@@ -214,20 +221,30 @@ export default function Discover() {
                   persona={persona}
                   onSwipe={handleSwipe}
                   isTop={index === 0}
+                  isSwiping={isSwiping}
                 />
               )).reverse()}
+
+              {/* Swipe Loader Overlay */}
+              {isSwiping && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[1px] rounded-2xl">
+                  <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-center gap-6 mt-8">
               <button
                 onClick={() => handleSwipe('left')}
-                className="w-16 h-16 rounded-full bg-card border border-border flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform"
+                disabled={isSwiping}
+                className="w-16 h-16 rounded-full bg-card border border-border flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X className="w-8 h-8 text-muted-foreground" />
               </button>
               <button
                 onClick={() => handleSwipe('right')}
-                className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform shadow-[0_0_20px_rgba(233,64,87,0.3)]"
+                disabled={isSwiping}
+                className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform shadow-[0_0_20px_rgba(233,64,87,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Heart className="w-10 h-10 text-white fill-white" />
               </button>

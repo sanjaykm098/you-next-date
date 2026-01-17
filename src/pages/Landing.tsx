@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart } from 'lucide-react';
@@ -6,6 +7,27 @@ import { supabase } from '@/lib/supabase';
 
 export default function Landing() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Check if onboarding is completed
+        const { data: user } = await supabase
+          .from('users')
+          .select('onboarding_completed')
+          .eq('id', session.user.id)
+          .single();
+
+        if (user?.onboarding_completed) {
+          navigate('/discover');
+        } else {
+          navigate('/onboarding');
+        }
+      }
+    };
+    checkUser();
+  }, [navigate]);
 
   const handleContinue = async () => {
     try {
