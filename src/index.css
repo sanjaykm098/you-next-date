@@ -91,37 +91,28 @@
     overscroll-behavior: none;
     position: fixed;
     width: 100%;
+    /* Native App Feel */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+    touch-action: none;
   }
 
   #root {
     height: 100%;
     width: 100%;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
-  /* Desktop Blocker Overlay */
-  @media (min-width: 768px) {
-    body::after {
-      content: "📱 Mobile Experience Only\A\A Please open this website on your phone.\A We designed this experience specifically for mobile devices.";
-      white-space: pre-wrap;
-      position: fixed;
-      inset: 0;
-      background: hsl(var(--background));
-      color: hsl(var(--foreground));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      z-index: 99999;
-      font-size: 1.25rem;
-      line-height: 1.6;
-      font-weight: 500;
-      text-align: center;
-      padding: 2rem;
-      opacity: 1;
-      pointer-events: auto;
-    }
+  /* Allow scrolling only in specific areas */
+  .scrollable {
+    overflow-y: auto !important;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
   }
+
 }
 
 @layer utilities {

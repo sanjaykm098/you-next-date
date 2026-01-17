@@ -11,6 +11,7 @@ import Profile from "./pages/Profile";
 import MyPlan from "./pages/MyPlan";
 import Upgrade from "./pages/Upgrade";
 import NotFound from "./pages/NotFound";
+import { MobileOnly } from "./components/layout/MobileOnly";
 
 const queryClient = new QueryClient();
 
@@ -19,20 +20,22 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/discover" element={<Discover />} />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/chat/:chatId" element={<ChatPage />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/my-plan" element={<MyPlan />} />
-          <Route path="/upgrade" element={<Upgrade />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <MobileOnly>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/discover" element={<Discover />} />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/chat/:chatId" element={<ChatPage />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/my-plan" element={<MyPlan />} />
+            <Route path="/upgrade" element={<Upgrade />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </MobileOnly>
     </TooltipProvider>
   </QueryClientProvider>
 );

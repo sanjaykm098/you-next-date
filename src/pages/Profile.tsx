@@ -30,7 +30,14 @@ export default function Profile() {
         supabase.from('usage_limits').select('*').eq('user_id', user.id).single()
       ]);
 
-      if (userRes.data) setProfile(userRes.data);
+      if (userRes.data) {
+        if (!userRes.data.onboarding_completed) {
+          navigate('/onboarding');
+          return;
+        }
+        setProfile(userRes.data);
+      }
+
       if (limitsRes.data) {
         setLimits(prev => ({ ...prev, ...limitsRes.data }));
       }
@@ -66,8 +73,8 @@ export default function Profile() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center mb-8"
         >
-          <div className="w-24 h-24 rounded-full bg-card flex items-center justify-center mb-4 ring-4 ring-primary/20">
-            <User className="w-12 h-12 text-muted-foreground" />
+          <div className="w-24 h-24 rounded-full bg-card flex items-center justify-center mb-4 ring-4 ring-primary/20 text-5xl">
+            {profile?.photos?.[0] || '😎'}
           </div>
           <h1 className="text-2xl font-semibold text-foreground">{profile?.name || 'User'}, {profile?.age || ''}</h1>
           <p className="text-muted-foreground capitalize">{profile?.gender || ''}</p>

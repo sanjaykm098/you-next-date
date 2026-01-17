@@ -74,9 +74,8 @@ export default function Onboarding() {
             if (error) throw error;
             navigate('/discover');
         } catch (error: any) {
-            console.error('Onboarding error:', error.message);
-            // Fallback for development
-            navigate('/discover');
+            console.error('Onboarding full error:', error);
+            toast.error('Failed to save profile: ' + (error.message || 'Unknown error'));
         } finally {
             setLoading(false);
         }
