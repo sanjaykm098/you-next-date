@@ -137,6 +137,11 @@ function ChatConversation({ chatId }: { chatId: string }) {
           .order('created_at', { ascending: true });
 
         if (messagesData) setMessages(messagesData);
+
+        // Request notification permission
+        if ("Notification" in window && Notification.permission === "default") {
+          Notification.requestPermission();
+        }
       }
       setLoading(false);
     };
