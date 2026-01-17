@@ -1,10 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Heart, MessageCircle, Settings, LogOut, ChevronRight } from 'lucide-react';
+import { User, Heart, MessageCircle, Settings, LogOut, ChevronRight, Crown } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { mockUsageLimits, vibeOptions } from '@/data/mockData';
+import { mockUsageLimits } from '@/data/mockData';
 import { Progress } from '@/components/ui/progress';
-
 export default function Profile() {
   const navigate = useNavigate();
   
@@ -109,6 +108,19 @@ export default function Profile() {
           transition={{ delay: 0.3 }}
           className="bg-card rounded-2xl overflow-hidden mb-6"
         >
+          <button 
+            onClick={() => navigate('/my-plan')}
+            className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Crown className="w-5 h-5 text-primary" />
+              <span className="text-foreground">My Plan</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
+          
+          <div className="h-px bg-border" />
+          
           <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
             <div className="flex items-center gap-3">
               <Settings className="w-5 h-5 text-muted-foreground" />

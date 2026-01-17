@@ -7,6 +7,8 @@ import Landing from "./pages/Landing";
 import Discover from "./pages/Discover";
 import ChatPage from "./pages/Chat";
 import Profile from "./pages/Profile";
+import MyPlan from "./pages/MyPlan";
+import Upgrade from "./pages/Upgrade";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +25,8 @@ const App = () => (
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/chat/:chatId" element={<ChatPage />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/my-plan" element={<MyPlan />} />
+          <Route path="/upgrade" element={<Upgrade />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
