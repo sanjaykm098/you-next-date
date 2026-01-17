@@ -1,27 +1,61 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Heart, MessageCircle, Settings, LogOut, ChevronRight, Crown } from 'lucide-react';
+import { User, Heart, MessageCircle, Settings, LogOut, ChevronRight, Crown, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { mockUsageLimits } from '@/data/mockData';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/lib/supabase';
+
 export default function Profile() {
   const navigate = useNavigate();
-  
-  // Mock user data
-  const user = {
-    name: 'Rahul',
-    age: 25,
-    gender: 'Male',
-    vibes: ['Music', 'Travel', 'Coffee', 'Movies'],
-  };
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [limits, setLimits] = useState<any>({
+    swipes_today: 0,
+    messages_today: 0,
+    swipes_limit: 20,
+    messages_limit: 30
+  });
 
-  const handleLogout = () => {
-    // For now, navigate to landing
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/');
+        return;
+      }
+
+      const [userRes, limitsRes] = await Promise.all([
+        supabase.from('users').select('*').eq('id', user.id).single(),
+        supabase.from('usage_limits').select('*').eq('user_id', user.id).single()
+      ]);
+
+      if (userRes.data) setProfile(userRes.data);
+      if (limitsRes.data) {
+        setLimits(prev => ({ ...prev, ...limitsRes.data }));
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/');
   };
 
-  const swipeProgress = (mockUsageLimits.swipesUsed / mockUsageLimits.swipesLimit) * 100;
-  const messageProgress = (mockUsageLimits.messagesUsed / mockUsageLimits.messagesLimit) * 100;
+  const swipeProgress = (limits.swipes_today / limits.swipes_limit) * 100;
+  const messageProgress = (limits.messages_today / limits.messages_limit) * 100;
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[calc(100vh-136px)]">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -35,8 +69,8 @@ export default function Profile() {
           <div className="w-24 h-24 rounded-full bg-card flex items-center justify-center mb-4 ring-4 ring-primary/20">
             <User className="w-12 h-12 text-muted-foreground" />
           </div>
-          <h1 className="text-2xl font-semibold text-foreground">{user.name}, {user.age}</h1>
-          <p className="text-muted-foreground">{user.gender}</p>
+          <h1 className="text-2xl font-semibold text-foreground">{profile?.name || 'User'}, {profile?.age || ''}</h1>
+          <p className="text-muted-foreground capitalize">{profile?.gender || ''}</p>
         </motion.div>
 
         {/* Usage Stats */}
@@ -47,7 +81,7 @@ export default function Profile() {
           className="bg-card rounded-2xl p-6 mb-6"
         >
           <h2 className="text-lg font-medium text-foreground mb-4">Today's Activity</h2>
-          
+
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -56,12 +90,12 @@ export default function Profile() {
                   <span className="text-sm text-foreground">Swipes</span>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {mockUsageLimits.swipesUsed} / {mockUsageLimits.swipesLimit}
+                  {limits.swipes_today} / {limits.swipes_limit}
                 </span>
               </div>
-              <Progress value={swipeProgress} className="h-2" />
+              <Progress value={Math.min(swipeProgress, 100)} className="h-2" />
             </div>
-            
+
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -69,10 +103,10 @@ export default function Profile() {
                   <span className="text-sm text-foreground">Messages</span>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {mockUsageLimits.messagesUsed} / {mockUsageLimits.messagesLimit}
+                  {limits.messages_today} / {limits.messages_limit}
                 </span>
               </div>
-              <Progress value={messageProgress} className="h-2" />
+              <Progress value={Math.min(messageProgress, 100)} className="h-2" />
             </div>
           </div>
         </motion.div>
@@ -86,11 +120,10 @@ export default function Profile() {
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-medium text-foreground">Your Vibes</h2>
-            <button className="text-secondary text-sm hover:underline">Edit</button>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
-            {user.vibes.map((vibe) => (
+            {profile?.preferences?.map((vibe: string) => (
               <span
                 key={vibe}
                 className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium"
@@ -108,29 +141,7 @@ export default function Profile() {
           transition={{ delay: 0.3 }}
           className="bg-card rounded-2xl overflow-hidden mb-6"
         >
-          <button 
-            onClick={() => navigate('/my-plan')}
-            className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <Crown className="w-5 h-5 text-primary" />
-              <span className="text-foreground">My Plan</span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </button>
-          
-          <div className="h-px bg-border" />
-          
-          <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-            <div className="flex items-center gap-3">
-              <Settings className="w-5 h-5 text-muted-foreground" />
-              <span className="text-foreground">Settings</span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </button>
-          
-          <div className="h-px bg-border" />
-          
+
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-destructive"

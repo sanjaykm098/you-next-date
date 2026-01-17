@@ -1,53 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Send } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Send, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { mockChats, mockMessages } from '@/data/mockData';
 import { Chat, Message } from '@/types';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 function formatTime(date: Date): string {
   const now = new Date();
   const diff = now.getTime() - date.getTime();
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
-  
+
   if (mins < 1) return 'Just now';
   if (mins < 60) return `${mins}m ago`;
   if (hours < 24) return `${hours}h ago`;
   return date.toLocaleDateString();
 }
 
-function ChatListItem({ chat, onClick }: { chat: Chat; onClick: () => void }) {
+function ChatListItem({ chat, onClick }: { chat: any; onClick: () => void }) {
   return (
     <motion.button
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="w-full flex items-center gap-3 p-4 hover:bg-card/50 transition-colors"
+      className="w-full flex items-center gap-3 p-4 hover:bg-card/50 transition-colors border-b border-border/50"
     >
       <div className="relative">
         <img
-          src={chat.persona.photos[0]}
-          alt={chat.persona.name}
-          className="w-14 h-14 rounded-full object-cover"
+          src={chat.personas.photos[0]}
+          alt={chat.personas.name}
+          className="w-14 h-14 rounded-full object-cover ring-2 ring-border"
         />
-        {chat.unreadCount > 0 && (
-          <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-            <span className="text-xs font-medium text-primary-foreground">{chat.unreadCount}</span>
+        {chat.unread_count > 0 && (
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-background">
+            <span className="text-[10px] font-bold text-white">{chat.unread_count}</span>
           </div>
         )}
       </div>
       <div className="flex-1 min-w-0 text-left">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-medium text-foreground">{chat.persona.name}</h3>
-          <span className="text-xs text-muted-foreground">{formatTime(chat.lastMessageTime)}</span>
+          <h3 className="font-semibold text-foreground">{chat.personas.name}</h3>
+          <span className="text-xs text-muted-foreground">{formatTime(new Date(chat.last_message_time))}</span>
         </div>
         <p className={cn(
           "text-sm truncate",
-          chat.unreadCount > 0 ? "text-foreground font-medium" : "text-muted-foreground"
+          chat.unread_count > 0 ? "text-foreground font-medium" : "text-muted-foreground"
         )}>
-          {chat.lastMessage}
+          {chat.last_message || 'Start a conversation'}
         </p>
       </div>
     </motion.button>
@@ -56,11 +56,38 @@ function ChatListItem({ chat, onClick }: { chat: Chat; onClick: () => void }) {
 
 function ChatList() {
   const navigate = useNavigate();
+  const [chats, setChats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (mockChats.length === 0) {
+  useEffect(() => {
+    const fetchChats = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('chats')
+        .select('*, personas(*)')
+        .eq('user_id', user.id)
+        .order('last_message_time', { ascending: false });
+
+      if (data) setChats(data);
+      setLoading(false);
+    };
+    fetchChats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-136px)]">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (chats.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-136px)] px-6 text-center">
-        <div className="w-24 h-24 rounded-full bg-card flex items-center justify-center mb-6">
+        <div className="w-24 h-24 rounded-full bg-card flex items-center justify-center mb-6 shadow-inner">
           <Send className="w-10 h-10 text-muted-foreground" />
         </div>
         <h2 className="text-xl font-semibold text-foreground mb-2">No chats yet</h2>
@@ -70,8 +97,8 @@ function ChatList() {
   }
 
   return (
-    <div className="divide-y divide-border">
-      {mockChats.map((chat) => (
+    <div className="divide-y divide-border/30">
+      {chats.map((chat) => (
         <ChatListItem
           key={chat.id}
           chat={chat}
@@ -82,159 +109,189 @@ function ChatList() {
   );
 }
 
-function MessageBubble({ message, isUser }: { message: Message; isUser: boolean }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn('flex', isUser ? 'justify-end' : 'justify-start')}
-    >
-      <div
-        className={cn(
-          'max-w-[75%] px-4 py-3 rounded-2xl',
-          isUser
-            ? 'bg-primary text-primary-foreground rounded-br-md'
-            : 'bg-card text-card-foreground rounded-bl-md'
-        )}
-      >
-        <p className="text-sm">{message.content}</p>
-        <p className={cn(
-          'text-xs mt-1',
-          isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
-        )}>
-          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </p>
-      </div>
-    </motion.div>
-  );
-}
-
-function TypingIndicator() {
-  return (
-    <div className="flex justify-start">
-      <div className="bg-card px-4 py-3 rounded-2xl rounded-bl-md">
-        <div className="flex gap-1">
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              className="w-2 h-2 bg-muted-foreground rounded-full"
-              animate={{ y: [0, -4, 0] }}
-              transition={{
-                duration: 0.6,
-                repeat: Infinity,
-                delay: i * 0.1,
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ChatConversation({ chatId }: { chatId: string }) {
   const navigate = useNavigate();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [chat, setChat] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(mockMessages[chatId] || []);
-  
-  const chat = mockChats.find((c) => c.id === chatId);
-  
-  if (!chat) {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchChatData = async () => {
+      const { data: chatData } = await supabase
+        .from('chats')
+        .select('*, personas(*)')
+        .eq('id', chatId)
+        .single();
+
+      if (chatData) {
+        setChat(chatData);
+        const { data: messagesData } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('chat_id', chatId)
+          .order('created_at', { ascending: true });
+
+        if (messagesData) setMessages(messagesData);
+      }
+      setLoading(false);
+    };
+    fetchChatData();
+
+    // Subscribe to new messages
+    const channel = supabase
+      .channel(`chat:${chatId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `chat_id=eq.${chatId}`
+      }, (payload) => {
+        setMessages((prev) => [...prev, payload.new]);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [chatId]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isTyping]);
+
+  const handleSend = async () => {
+    if (!inputValue.trim() || !chat) return;
+
+    const text = inputValue.trim();
+    setInputValue('');
+
+    try {
+      // 1. Save user message to DB
+      const { data: userMsg, error } = await supabase.from('messages').insert({
+        chat_id: chatId,
+        sender_type: 'user',
+        content: text
+      }).select().single();
+
+      if (error) throw error;
+
+      // 2. Call AI Edge Function
+      setIsTyping(true);
+      const { data: aiData, error: aiError } = await supabase.functions.invoke('chat-ai', {
+        body: { chatId, message: text, personaId: chat.persona_id }
+      });
+
+      if (aiError) throw aiError;
+
+      // AI message will be added via realtime subscription
+    } catch (err) {
+      console.error('Send error:', err);
+      setIsTyping(false);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Chat not found</p>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
-    
-    const newMessage: Message = {
-      id: `m${Date.now()}`,
-      chatId,
-      content: inputValue,
-      sender: 'user',
-      timestamp: new Date(),
-    };
-    
-    setMessages((prev) => [...prev, newMessage]);
-    setInputValue('');
-    
-    // Simulate typing indicator
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      const response: Message = {
-        id: `m${Date.now() + 1}`,
-        chatId,
-        content: "Haha, that's interesting! Tell me more 😊",
-        sender: 'persona',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, response]);
-    }, 2000);
-  };
+  if (!chat) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-[100dvh] bg-background">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="flex items-center gap-3 px-4 h-14">
-          <button
-            onClick={() => navigate('/chat')}
-            className="p-2 -ml-2 hover:bg-card rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
-          <img
-            src={chat.persona.photos[0]}
-            alt={chat.persona.name}
-            className="w-10 h-10 rounded-full object-cover"
-          />
-          <div>
-            <h2 className="font-medium text-foreground">{chat.persona.name}</h2>
-            <p className="text-xs text-muted-foreground">
-              {isTyping ? 'typing...' : 'online'}
-            </p>
-          </div>
+      <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 h-16 flex items-center px-4">
+        <button
+          onClick={() => navigate('/chat')}
+          className="p-2 -ml-2 hover:bg-card rounded-full transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-foreground" />
+        </button>
+        <img
+          src={chat.personas.photos[0]}
+          alt={chat.personas.name}
+          className="w-10 h-10 rounded-full object-cover ml-2 border border-border"
+        />
+        <div className="ml-3">
+          <h2 className="font-semibold text-foreground text-sm">{chat.personas.name}</h2>
+          <p className="text-[10px] text-primary flex items-center gap-1">
+            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+            {isTyping ? 'typing...' : 'online'}
+          </p>
         </div>
       </div>
-      
+
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto pt-14 pb-20 px-4">
-        <div className="flex flex-col gap-3 py-4">
-          {messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              isUser={message.sender === 'user'}
-            />
-          ))}
-          {isTyping && <TypingIndicator />}
-        </div>
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto pt-16 pb-24 px-4 space-y-4 scroll-smooth"
+      >
+        {messages.map((message) => (
+          <motion.div
+            key={message.id}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={cn('flex', message.sender_type === 'user' ? 'justify-end' : 'justify-start')}
+          >
+            <div
+              className={cn(
+                'max-w-[80%] px-4 py-2.5 rounded-2xl text-sm shadow-sm',
+                message.sender_type === 'user'
+                  ? 'bg-primary text-white rounded-tr-none'
+                  : 'bg-card text-foreground rounded-tl-none border border-border/50'
+              )}
+            >
+              {message.content}
+            </div>
+          </motion.div>
+        ))}
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="bg-card px-4 py-3 rounded-2xl rounded-tl-none border border-border/50">
+              <div className="flex gap-1">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-1.5 h-1.5 bg-muted-foreground rounded-full"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      
+
       {/* Input */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t border-border p-4">
-        <div className="flex items-center gap-3 max-w-lg mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-t border-border/50 p-4">
+        <div className="flex items-center gap-2 max-w-2xl mx-auto">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Type a message..."
-            maxLength={500}
-            className="flex-1 bg-card text-foreground placeholder:text-muted-foreground px-4 py-3 rounded-full outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+            className="flex-1 bg-card border border-border/50 text-foreground px-4 py-3 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
           />
-          <button
+          <Button
             onClick={handleSend}
             disabled={!inputValue.trim() || isTyping}
-            className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+            size="icon"
+            className="w-12 h-12 bg-primary hover:bg-primary/90 text-white rounded-2xl transition-all active:scale-95"
           >
             <Send className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -243,14 +300,19 @@ function ChatConversation({ chatId }: { chatId: string }) {
 
 export default function ChatPage() {
   const { chatId } = useParams();
-  
+
   if (chatId) {
     return <ChatConversation chatId={chatId} />;
   }
-  
+
   return (
     <AppLayout>
-      <ChatList />
+      <div className="max-w-2xl mx-auto">
+        <div className="p-4 border-b border-border/30">
+          <h1 className="text-xl font-bold text-foreground">Messages</h1>
+        </div>
+        <ChatList />
+      </div>
     </AppLayout>
   );
 }

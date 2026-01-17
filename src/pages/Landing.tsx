@@ -2,13 +2,25 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
 
 export default function Landing() {
   const navigate = useNavigate();
 
-  const handleContinue = () => {
-    // For now, navigate to discover (will be auth flow later)
-    navigate('/discover');
+  const handleContinue = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/onboarding',
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Login error:', error.message);
+      // Fallback for development if URL is not configured
+      navigate('/onboarding');
+    }
   };
 
   return (
@@ -57,7 +69,7 @@ export default function Landing() {
         <Button
           onClick={handleContinue}
           size="lg"
-          className="w-full h-14 text-lg font-medium bg-foreground text-background hover:bg-foreground/90 rounded-xl flex items-center justify-center gap-3"
+          className="w-full h-14 text-lg font-medium bg-primary text-white hover:bg-primary/90 rounded-xl flex items-center justify-center gap-3"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
